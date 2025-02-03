@@ -1,6 +1,7 @@
 package com.workshopngine.platform.authenticationmanagement.authentication.application.internal.outboundservices.acl;
 
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.aggregates.User;
+import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.model.ExecutionActions;
 import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolesResource;
@@ -54,6 +55,14 @@ public class ExternalKeycloakService {
         RolesResource rolesResource = getRolesResource();
         RoleRepresentation roleRepresentation = rolesResource.get(roleName).toRepresentation();
         userResource.roles().realmLevel().add(Collections.singletonList(roleRepresentation));
+    }
+
+    public void forgotPassword(String email){
+        UsersResource usersResource = getUsersResource();
+        UserRepresentation userRepresentation = usersResource.searchByEmail(email, true).getFirst();
+        if (userRepresentation == null) throw new IllegalArgumentException("User with email %s not found".formatted(email));
+        UserResource userResource = usersResource.get(userRepresentation.getId());
+        userResource.executeActionsEmail(List.of(ExecutionActions.UPDATE_PASSWORD));
     }
 
     private UserRepresentation mapUserToUserRepresentation(User user){

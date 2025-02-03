@@ -3,6 +3,7 @@ package com.workshopngine.platform.authenticationmanagement.authentication.appli
 import com.workshopngine.platform.authenticationmanagement.authentication.application.internal.outboundservices.acl.ExternalKeycloakService;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.aggregates.User;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.commands.AssignRoleCommand;
+import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.commands.ForgotPasswordCommand;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.commands.SignUpCommand;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.entities.Role;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.services.UserCommandService;
@@ -25,5 +26,10 @@ public class UserCommandServiceImpl implements UserCommandService {
     public void handle(AssignRoleCommand command) {
         var role = new Role(command.roleName());
         externalKeycloakService.assignRoleToUser(command.userId(), role.getName());
+    }
+
+    @Override
+    public void handle(ForgotPasswordCommand command) {
+        externalKeycloakService.forgotPassword(command.email());
     }
 }
