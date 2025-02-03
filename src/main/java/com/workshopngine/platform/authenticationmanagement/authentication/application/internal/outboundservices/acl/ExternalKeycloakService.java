@@ -29,9 +29,10 @@ public class ExternalKeycloakService {
         userRepresentation.setCredentials(credentialRepresentation);
         UsersResource usersResource = getUsersResource();
         try (Response response = usersResource.create(userRepresentation)) {
-            if (!Objects.equals(response.getStatus(), 201)) {
-                throw new IllegalArgumentException("Error creating user");
-            }
+            if (!Objects.equals(response.getStatus(), 201)) { throw new IllegalArgumentException("Error creating user");}
+            String locationHeader = response.getHeaderString("Location");
+            String userId = extractUserIdFromLocation(locationHeader);
+            sendEmailVerification(userId);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error creating user", e);
         }
@@ -47,7 +48,7 @@ public class ExternalKeycloakService {
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setUsername(user.getUsername());
         userRepresentation.setEmail(user.getEmail());
-        userRepresentation.setEmailVerified(true);
+        userRepresentation.setEmailVerified(false);
         userRepresentation.setEnabled(true);
         return userRepresentation;
     }
@@ -62,5 +63,16 @@ public class ExternalKeycloakService {
 
     private UsersResource getUsersResource(){
         return keycloak.realm(realm).users();
+    }
+
+    private void sendEmailVerification(String userId) {
+        UsersResource usersResource = getUsersResource();
+        usersResource.get(userId).sendVerifyEmail();
+    }
+
+    private String extractUserIdFromLocation(String locationHeader) {
+        if (locationHeader == null || locationHeader.isEmpty()) throw new IllegalArgumentException("Location header is missing in response");
+        if (!locationHeader.contains("/users/")) throw new IllegalArgumentException("Unexpected Location header format: " + locationHeader);
+        return locationHeader.substring(locationHeader.lastIndexOf("/") + 1);
     }
 }
