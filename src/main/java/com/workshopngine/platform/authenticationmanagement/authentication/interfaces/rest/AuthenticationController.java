@@ -1,7 +1,9 @@
 package com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest;
 
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.services.UserCommandService;
+import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.CreateForgotPasswordResource;
 import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.SignUpResource;
+import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.ForgotPasswordCommandFromResourceAssembler;
 import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.SignUpCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,5 +35,17 @@ public class AuthenticationController {
         var command = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
         userCommandService.handle(command);
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Forgot password", description = "Forgot password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<?> forgotPassword(@RequestBody CreateForgotPasswordResource resource) {
+        var command = ForgotPasswordCommandFromResourceAssembler.toCommandFromResource(resource);
+        userCommandService.handle(command);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
