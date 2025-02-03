@@ -4,11 +4,13 @@ import com.workshopngine.platform.authenticationmanagement.authentication.applic
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.aggregates.User;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.commands.AssignRoleCommand;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.commands.ForgotPasswordCommand;
+import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.commands.SignInCommand;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.commands.SignUpCommand;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.entities.Role;
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.services.UserCommandService;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -31,5 +33,10 @@ public class UserCommandServiceImpl implements UserCommandService {
     @Override
     public void handle(ForgotPasswordCommand command) {
         externalKeycloakService.forgotPassword(command.email());
+    }
+
+    @Override
+    public Triple<User, String, String> handle(SignInCommand command) {
+        return externalKeycloakService.signIn(command.email(), command.password());
     }
 }

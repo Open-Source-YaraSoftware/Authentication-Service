@@ -2,11 +2,14 @@ package com.workshopngine.platform.authenticationmanagement.authentication.appli
 
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.aggregates.User;
 import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.model.ExecutionActions;
+import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.KeycloakPasswordGrantType;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.lang3.tuple.Triple;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -20,13 +23,15 @@ import java.util.Objects;
 
 @Service
 public class ExternalKeycloakService {
-    private final Keycloak keycloak;
-
     @Value("${keycloak.realm}")
     private String realm;
 
-    public ExternalKeycloakService(Keycloak keycloak) {
+    private final Keycloak keycloak;
+    private final KeycloakPasswordGrantType keycloakPasswordGrantType;
+
+    public ExternalKeycloakService(Keycloak keycloak, KeycloakPasswordGrantType keycloakPasswordGrantType) {
         this.keycloak = keycloak;
+        this.keycloakPasswordGrantType = keycloakPasswordGrantType;
     }
 
     public void createUser(User user){
@@ -65,6 +70,17 @@ public class ExternalKeycloakService {
         userResource.executeActionsEmail(List.of(ExecutionActions.UPDATE_PASSWORD));
     }
 
+    public Triple<User, String, String> signIn(String email, String password){
+        UserRepresentation userRepresentation = getUserByEmail(email);
+        try {
+            AccessTokenResponse tokenResponse = keycloakPasswordGrantType.getAccessToken(email, password);
+            User user = new User(userRepresentation.getId(), userRepresentation.getUsername(), userRepresentation.getEmail());
+            return Triple.of(user, tokenResponse.getToken(), tokenResponse.getRefreshToken());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+    }
+
     private UserRepresentation mapUserToUserRepresentation(User user){
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setUsername(user.getUsername());
@@ -84,6 +100,15 @@ public class ExternalKeycloakService {
 
     private UsersResource getUsersResource(){
         return keycloak.realm(realm).users();
+    }
+
+    private UserRepresentation getUserByEmail(String email){
+        UsersResource usersResource = getUsersResource();
+        return usersResource
+                .searchByEmail(email, true)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("User with email %s not found".formatted(email)));
     }
 
     @Async
