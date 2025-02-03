@@ -7,6 +7,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -65,7 +66,8 @@ public class ExternalKeycloakService {
         return keycloak.realm(realm).users();
     }
 
-    private void sendEmailVerification(String userId) {
+    @Async
+    protected void sendEmailVerification(String userId) {
         UsersResource usersResource = getUsersResource();
         usersResource.get(userId).sendVerifyEmail();
     }
