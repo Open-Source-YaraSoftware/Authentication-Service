@@ -2,8 +2,11 @@ package com.workshopngine.platform.authenticationmanagement.authentication.inter
 
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.services.UserCommandService;
 import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.CreateForgotPasswordResource;
+import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.SignInResource;
 import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.SignUpResource;
+import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.AuthenticatedUserResourceFromEntityAssembler;
 import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.ForgotPasswordCommandFromResourceAssembler;
+import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.SignInCommandFromResourceAssembler;
 import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.SignUpCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -35,6 +38,20 @@ public class AuthenticationController {
         var command = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
         userCommandService.handle(command);
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PostMapping("/sign-in")
+    @Operation(summary = "Sign in", description = "Sign in a user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User signed in"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<?> signIn(@RequestBody SignInResource resource) {
+        var command = SignInCommandFromResourceAssembler.toCommandFromResource(resource);
+        var authenticatedUser = userCommandService.handle(command);
+        if (authenticatedUser == null) return ResponseEntity.notFound().build();
+        var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler.toResourceFromEntity(authenticatedUser.getLeft(), authenticatedUser.getMiddle(), authenticatedUser.getRight());
+        return ResponseEntity.ok(authenticatedUserResource);
     }
 
     @PostMapping("/forgot-password")
