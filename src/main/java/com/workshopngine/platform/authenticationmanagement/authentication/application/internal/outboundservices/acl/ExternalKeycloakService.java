@@ -4,8 +4,8 @@ import com.workshopngine.platform.authenticationmanagement.authentication.domain
 import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.model.ExecutionActions;
 import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.model.KeycloakTokenResponse;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -71,14 +71,23 @@ public class ExternalKeycloakService {
         userResource.executeActionsEmail(List.of(ExecutionActions.UPDATE_PASSWORD));
     }
 
-    public Triple<User, String, String> signIn(String email, String password){
+    public ImmutableTriple<User, String, String> signIn(String email, String password){
         UserRepresentation userRepresentation = getUserByEmail(email);
         try {
             AccessTokenResponse tokenResponse = externalKeycloakTokenService.getAccessToken(email, password);
             User user = new User(userRepresentation.getId(), userRepresentation.getUsername(), userRepresentation.getEmail());
-            return Triple.of(user, tokenResponse.getToken(), tokenResponse.getRefreshToken());
+            return ImmutableTriple.of(user, tokenResponse.getToken(), tokenResponse.getRefreshToken());
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid email or password");
+        }
+    }
+
+    public ImmutablePair<String, String> signInWithGoogle(String subjectToken){
+        try {
+            KeycloakTokenResponse tokenResponse = externalKeycloakTokenService.getTokensBySigningInWithGoogle(subjectToken);
+            return ImmutablePair.of(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid subject token %s".formatted(subjectToken));
         }
     }
 
