@@ -1,13 +1,8 @@
 package com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest;
 
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.services.UserCommandService;
-import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.CreateForgotPasswordResource;
-import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.SignInResource;
-import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.SignUpResource;
-import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.AuthenticatedUserResourceFromEntityAssembler;
-import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.ForgotPasswordCommandFromResourceAssembler;
-import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.SignInCommandFromResourceAssembler;
-import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.SignUpCommandFromResourceAssembler;
+import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.dto.*;
+import com.workshopngine.platform.authenticationmanagement.authentication.interfaces.rest.transform.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -64,5 +59,19 @@ public class AuthenticationController {
         var command = ForgotPasswordCommandFromResourceAssembler.toCommandFromResource(resource);
         userCommandService.handle(command);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/refresh-token")
+    @Operation(summary = "Refresh token", description = "Refresh token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Token refreshed"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<RefreshTokenResource> refreshToken(@RequestBody CreateRefreshTokenResource resource) {
+        var command = RefreshTokenCommandFromResourceAssembler.toCommandFromResource(resource);
+        var tokens = userCommandService.handle(command);
+        if (tokens == null) return ResponseEntity.notFound().build();
+        var refreshTokenResource = RefreshTokenResourceFromEntityAssembler.toResourceFromEntity(tokens.left, tokens.right);
+        return new ResponseEntity<>(refreshTokenResource, HttpStatus.OK);
     }
 }
