@@ -2,9 +2,10 @@ package com.workshopngine.platform.authenticationmanagement.authentication.appli
 
 import com.workshopngine.platform.authenticationmanagement.authentication.domain.model.aggregates.User;
 import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.model.ExecutionActions;
-import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.KeycloakPasswordGrantType;
+import com.workshopngine.platform.authenticationmanagement.authentication.infrastructure.config.model.KeycloakTokenResponse;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -27,11 +28,11 @@ public class ExternalKeycloakService {
     private String realm;
 
     private final Keycloak keycloak;
-    private final KeycloakPasswordGrantType keycloakPasswordGrantType;
+    private final ExternalKeycloakTokenService externalKeycloakTokenService;
 
-    public ExternalKeycloakService(Keycloak keycloak, KeycloakPasswordGrantType keycloakPasswordGrantType) {
+    public ExternalKeycloakService(Keycloak keycloak, ExternalKeycloakTokenService keycloakConfig) {
         this.keycloak = keycloak;
-        this.keycloakPasswordGrantType = keycloakPasswordGrantType;
+        this.externalKeycloakTokenService = keycloakConfig;
     }
 
     public void createUser(User user){
@@ -73,11 +74,20 @@ public class ExternalKeycloakService {
     public Triple<User, String, String> signIn(String email, String password){
         UserRepresentation userRepresentation = getUserByEmail(email);
         try {
-            AccessTokenResponse tokenResponse = keycloakPasswordGrantType.getAccessToken(email, password);
+            AccessTokenResponse tokenResponse = externalKeycloakTokenService.getAccessToken(email, password);
             User user = new User(userRepresentation.getId(), userRepresentation.getUsername(), userRepresentation.getEmail());
             return Triple.of(user, tokenResponse.getToken(), tokenResponse.getRefreshToken());
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid email or password");
+        }
+    }
+
+    public ImmutablePair<String, String> refreshToken(String refreshToken){
+        try {
+            KeycloakTokenResponse tokenResponse = externalKeycloakTokenService.refreshToken(refreshToken);
+            return ImmutablePair.of(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid refresh token");
         }
     }
 
