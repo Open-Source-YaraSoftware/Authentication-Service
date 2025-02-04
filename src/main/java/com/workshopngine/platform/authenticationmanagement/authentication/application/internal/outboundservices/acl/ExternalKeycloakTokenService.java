@@ -64,4 +64,25 @@ public class ExternalKeycloakTokenService {
                 .build();
         return keycloak.tokenManager().getAccessToken();
     }
+
+    public KeycloakTokenResponse getTokensBySigningInWithGoogle(String subjectToken) {
+        String tokenUrl = authServerUrl + "/realms/" + realm + "/protocol/openid-connect/token";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("client_id", clientId);
+        formData.add("client_secret", clientSecret);
+        formData.add("grant_type", GranTypes.GOOGLE_SUBJECT_TOKEN);
+        formData.add("subject_token_type", GranTypes.GOOGLE_SUBJECT_TOKEN_TYPE);
+        formData.add("subject_token", subjectToken);
+        formData.add("subject_issuer", GranTypes.GOOGLE_SUBJECT_ISSUER);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
+
+        ResponseEntity<KeycloakTokenResponse> response = restTemplate.postForEntity(tokenUrl, request, KeycloakTokenResponse.class);
+
+        return response.getBody();
+    }
 }
