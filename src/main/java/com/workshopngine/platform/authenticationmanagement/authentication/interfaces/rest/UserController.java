@@ -17,6 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping(value = "/users", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -24,6 +26,20 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
+
+    @GetMapping
+    @Operation(summary = "Get a user by its token", description = "Get a user by its token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<UserResource> getUserByToken(Principal principal) {
+        var query = new GetUserByIdQuery(principal.getName());
+        var user = userQueryService.handle(query);
+        if (user.isEmpty()) return ResponseEntity.notFound().build();
+        var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user.get());
+        return new ResponseEntity<>(userResource, HttpStatus.OK);
+    }
 
     @GetMapping("/{userId}")
     @Operation(summary = "Get a user by id", description = "Get a user by id")
