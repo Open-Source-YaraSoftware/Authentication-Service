@@ -53,7 +53,7 @@ public class ExternalKeycloakService {
     public User getUserById(String userId){
         UsersResource usersResource = getUsersResource();
         UserRepresentation userRepresentation = usersResource.get(userId).toRepresentation();
-        return new User(userRepresentation.getUsername(), userRepresentation.getEmail());
+        return new User(userId, userRepresentation.getUsername(), userRepresentation.getEmail());
     }
 
     public void assignRoleToUser(String userId, String roleName){

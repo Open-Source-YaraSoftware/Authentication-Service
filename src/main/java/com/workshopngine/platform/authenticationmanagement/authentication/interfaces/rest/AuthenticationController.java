@@ -41,7 +41,7 @@ public class AuthenticationController {
             @ApiResponse(responseCode = "200", description = "User signed in"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
-    public ResponseEntity<?> signIn(@RequestBody SignInResource resource) {
+    public ResponseEntity<AuthenticatedUserResource> signIn(@RequestBody SignInResource resource) {
         var command = SignInCommandFromResourceAssembler.toCommandFromResource(resource);
         var authenticatedUser = userCommandService.handle(command);
         if (authenticatedUser == null) return ResponseEntity.notFound().build();

@@ -3,7 +3,6 @@ package com.workshopngine.platform.authenticationmanagement.authentication.inter
 public record UserResource(
     String id,
     String username,
-    String email,
-    String token
+    String email
 ) {
 }
